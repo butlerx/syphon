@@ -4,11 +4,19 @@ extern crate clap;
 extern crate named_tuple;
 
 use std::{env, error::Error};
-use tokio::{self, sync::broadcast::{channel, Sender}};
+use tokio::{
+    self,
+    sync::broadcast::{
+        channel,
+        Sender,
+        Receiver
+    }
+};
 
 mod receiver;
 mod config;
 mod parser;
+mod uploader;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -30,19 +38,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .unwrap_or("configs/config.toml")
             .to_string()
     )?;
-    let (send, recv) = channel(1024);
+    let (send, recv): (Sender<parser::Metric>, Receiver<parser::Metric>) = channel(1024);
 
     let _ = tokio::join!(
         tokio::spawn(start_udp(conf.clone(), send.clone())),
         tokio::spawn(start_tcp(conf.clone(), send.clone())),
         //tokio::spawn(start_prometheus(conf.clone(), send.clone())),
-        tokio::spawn(parser::parse(recv)),
+        tokio::spawn(uploader::spawn(conf.clone(), recv)),
     );
 
     Ok(())
 }
 
-async fn start_tcp(conf: config::Schema, sender: Sender<String>){
+async fn start_tcp(conf: config::Schema, sender: Sender<parser::Metric>){
     if !conf.tcp.enabled { return; }
     let server: receiver::Tcp = receiver::Receiver::bind(
         &conf.tcp.listen, sender.clone()
@@ -50,7 +58,7 @@ async fn start_tcp(conf: config::Schema, sender: Sender<String>){
     receiver::start(server).await
 }
 
-async fn start_udp(conf: config::Schema, sender: Sender<String>){
+async fn start_udp(conf: config::Schema, sender: Sender<parser::Metric>){
     if !conf.udp.enabled { return; }
     let server: receiver::Udp = receiver::Receiver::bind(
         &conf.udp.listen, sender.clone()

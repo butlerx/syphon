@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use crate::parser::{graphite, Metric};
 use std::io;
 use super::base;
 use tokio::{
@@ -12,12 +13,12 @@ static TCP_BUFFER_SIZE: usize = 1024;
 
 pub struct Server {
     listener: TcpListener,
-    sender: Sender<String>,
+    sender: Sender<Metric>,
 }
 
 #[async_trait]
 impl base::Receiver for Server {
-    async fn bind(addr: &String, sender: Sender<String>) -> io::Result<Server> {
+    async fn bind(addr: &String, sender: Sender<Metric>) -> io::Result<Server> {
         let listener = TcpListener::bind(&addr).await?;
         Ok(Server{ listener, sender })
     }
@@ -42,9 +43,11 @@ impl base::Receiver for Server {
                         return;
                     }
                     let msg = String::from_utf8_lossy(&buf[0..size]).to_string();
-                    sender
-                        .send(msg)
-                        .expect("failed to write data to channel");
+                    for metric in graphite::parse(msg) {
+                        sender
+                            .send(metric)
+                            .expect("failed to write data to channel");
+                    }
                     println!("Recieved {} bytes from {}", size, peer);
                 }
             });

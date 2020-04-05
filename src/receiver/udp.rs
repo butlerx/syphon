@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use std::{io, net::SocketAddr};
 use super::base;
 use tokio::{self, net::UdpSocket, sync::broadcast::Sender};
+use crate::parser::{graphite, Metric};
 
 static UDP_BUFFER_SIZE: usize = 1024;
 
@@ -9,12 +10,12 @@ pub struct Server {
     socket: UdpSocket,
     buf: Vec<u8>,
     to_send: Option<(usize, SocketAddr)>,
-    sender: Sender<String>,
+    sender: Sender<Metric>,
 }
 
 #[async_trait]
 impl base::Receiver for Server {
-    async fn bind(addr: &String, sender: Sender<String>) -> io::Result<Server> {
+    async fn bind(addr: &String, sender: Sender<Metric>) -> io::Result<Server> {
         let socket = UdpSocket::bind(&addr).await?;
         let server = Server{
             socket,
@@ -33,10 +34,12 @@ impl base::Receiver for Server {
         loop {
             if let Some((size, peer)) = self.to_send {
                 let msg = String::from_utf8_lossy(&self.buf[0..size]).to_string();
-                self
-                    .sender
-                    .send(msg)
-                    .expect("failed to write data to channel");
+                for metric in graphite::parse(msg) {
+                    self
+                        .sender
+                        .send(metric)
+                        .expect("failed to write data to channel");
+                }
                 println!("Recieved {} bytes from {}", size, peer);
             }
 

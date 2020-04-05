@@ -1,8 +1,7 @@
-use std::net::SocketAddr;
-use std::{io};
-use tokio;
-use tokio::net::UdpSocket;
-use tokio::sync::broadcast::Sender;
+use async_trait::async_trait;
+use std::{io, net::SocketAddr};
+use super::base;
+use tokio::{self, net::UdpSocket, sync::broadcast::Sender};
 
 static UDP_BUFFER_SIZE: usize = 1024;
 
@@ -13,8 +12,9 @@ pub struct Server {
     sender: Sender<String>,
 }
 
-impl Server {
-    pub async fn bind(addr: &String, sender: Sender<String>) -> io::Result<Server> {
+#[async_trait]
+impl base::Receiver for Server {
+    async fn bind(addr: &String, sender: Sender<String>) -> io::Result<Server> {
         let socket = UdpSocket::bind(&addr).await?;
         let server = Server{
             socket,
@@ -25,11 +25,11 @@ impl Server {
         Ok(server)
     }
 
-    pub fn addr(&self) -> io::Result<std::net::SocketAddr> {
+    fn addr(&self) -> io::Result<std::net::SocketAddr> {
         self.socket.local_addr()
     }
 
-    pub async fn run(&mut self) -> Result<(), io::Error> {
+    async fn run(&mut self) -> Result<(), io::Error> {
         loop {
             if let Some((size, peer)) = self.to_send {
                 let msg = String::from_utf8_lossy(&self.buf[0..size]).to_string();

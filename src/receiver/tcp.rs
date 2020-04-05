@@ -1,9 +1,12 @@
-use tokio;
-use tokio::io::{AsyncReadExt};
-use tokio::net::TcpListener;
-use tokio::sync::broadcast::Sender;
-use std::{io};
-
+use async_trait::async_trait;
+use std::io;
+use super::base;
+use tokio::{
+    self,
+    io::{AsyncReadExt},
+    net::TcpListener,
+    sync::broadcast::Sender,
+};
 
 static TCP_BUFFER_SIZE: usize = 1024;
 
@@ -12,18 +15,18 @@ pub struct Server {
     sender: Sender<String>,
 }
 
-impl Server {
-    pub async fn bind(addr: &String, sender: Sender<String>) -> io::Result<Server> {
+#[async_trait]
+impl base::Receiver for Server {
+    async fn bind(addr: &String, sender: Sender<String>) -> io::Result<Server> {
         let listener = TcpListener::bind(&addr).await?;
-        let server = Server{listener, sender};
-        Ok(server)
+        Ok(Server{ listener, sender })
     }
 
-    pub fn addr(&self) -> io::Result<std::net::SocketAddr> {
+    fn addr(&self) -> io::Result<std::net::SocketAddr> {
         self.listener.local_addr()
     }
 
-    pub async fn run(&mut self) -> Result<(), io::Error> {
+    async fn run(&mut self) -> Result<(), io::Error> {
         loop {
             let (mut socket, peer) = self.listener.accept().await?;
             let sender = self.sender.clone();

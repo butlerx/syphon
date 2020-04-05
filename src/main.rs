@@ -1,19 +1,14 @@
 #[macro_use]
 extern crate clap;
+#[macro_use]
+extern crate named_tuple;
 
-use std::error::Error;
-use std::{env};
-use tokio;
-use tokio::sync::broadcast::{Receiver,channel, Sender};
+use std::{env, error::Error};
+use tokio::{self, sync::broadcast::{channel, Sender}};
 
 mod receiver;
 mod config;
-
-async fn echo(mut recv: Receiver<String>){
-    loop {
-        println!("message recieved {}", recv.recv().await.unwrap())
-    }
-}
+mod parser;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -40,7 +35,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let _ = tokio::join!(
         tokio::spawn(start_udp(conf.clone(), send.clone())),
         tokio::spawn(start_tcp(conf.clone(), send.clone())),
-        echo(recv)
+        //tokio::spawn(start_prometheus(conf.clone(), send.clone())),
+        tokio::spawn(parser::parse(recv)),
     );
 
     Ok(())
@@ -48,20 +44,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
 async fn start_tcp(conf: config::Schema, sender: Sender<String>){
     if !conf.tcp.enabled { return; }
-    let mut tcp_server = receiver::tcp::Server::bind(&conf.tcp.listen, sender.clone()).await.expect("unable to bind to tcp port");
-    println!("Listening to tcp on: {}", tcp_server.addr().expect("unable to get local_addr"));
-    tcp_server.run().await.expect("error running tcp_server");
-
+    let server: receiver::Tcp = receiver::Receiver::bind(
+        &conf.tcp.listen, sender.clone()
+    ).await.expect("unable to bind to tcp port");
+    receiver::start(server).await
 }
 
 async fn start_udp(conf: config::Schema, sender: Sender<String>){
     if !conf.udp.enabled { return; }
-    let mut udp_server = receiver::udp::Server::bind(&conf.udp.listen, sender.clone())
-        .await
-        .expect("unable to bind to udp port");
-    println!(
-        "Listening to udp on: {}",
-        udp_server.addr().expect("unable to get local_addr")
-    );
-    udp_server.run().await.expect("error running udp_server");
+    let server: receiver::Udp = receiver::Receiver::bind(
+        &conf.udp.listen, sender.clone()
+    ).await.expect("unable to bind to tcp port");
+    receiver::start(server).await
 }
+
+//async fn start_prometheus(conf: config::Schema, sender: Sender<String>){
+    //if !conf.prometheus.enabled { return; }
+    //let server: receiver::Prometheus = receiver::Receiver::bind(
+        //&conf.prometheus.listen, sender.clone()
+    //).await.expect("unable to bind to Prometheus http on port");
+    //receiver::start(server).await
+//}

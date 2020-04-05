@@ -50,5 +50,5 @@ enabled = true
 listen = "127.0.0.1:2003"
 
 [prometheus]
-enabled = false
+enabled = true
 listen = "127.0.0.1:2006"

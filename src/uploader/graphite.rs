@@ -7,7 +7,7 @@ pub fn format(metric: Metric) -> String {
         .map(|(key, value)| format!("{}={}", key, value))
         .collect();
     format!(
-        "{path}{tags} {value} {time}",
+        "{path}{tags} {value} {time}\n",
         path = metric.path(),
         tags = if tags.len() == 0 {
             "".to_string()

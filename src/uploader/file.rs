@@ -4,10 +4,7 @@ use std::{
 };
 use tokio::{
     prelude::*,
-    fs::{
-        File,
-        OpenOptions,
-    },
+    fs::OpenOptions,
     sync::broadcast::Receiver,
 };
 use crate::parser::Metric;
@@ -15,11 +12,12 @@ use super::graphite;
 
 pub async fn uploader(path: String, mut rx: Receiver<Metric>) -> Result<(), Box<dyn Error>> {
     let file_path = Path::new(&path);
-    let mut file = if file_path.exists() {
-        OpenOptions::new().write(true).open(&file_path).await?
-    } else {
-        File::create(&file_path).await?
-    };
+    let mut file = OpenOptions::new()
+        .append(true)
+        .write(true)
+        .open(&file_path)
+        .await?;
+    println!("Writing to file; file={}", file_path.display());
 
     loop {
         let res = rx.recv().await.unwrap() ;

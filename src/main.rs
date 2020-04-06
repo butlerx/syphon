@@ -41,35 +41,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let (send, _recv): (Sender<parser::Metric>, Receiver<parser::Metric>) = channel(1024);
 
     let _ = tokio::join!(
-        tokio::spawn(start_udp(conf.clone(), send.clone())),
-        tokio::spawn(start_tcp(conf.clone(), send.clone())),
-        //tokio::spawn(start_prometheus(conf.clone(), send.clone())),
         tokio::spawn(uploader::spawn(conf.clone(), send.clone())),
+        tokio::spawn(receiver::spawn(conf.clone(), send.clone())),
     );
 
     Ok(())
 }
 
-async fn start_tcp(conf: config::Schema, sender: Sender<parser::Metric>){
-    if !conf.tcp.enabled { return; }
-    let server: receiver::Tcp = receiver::Receiver::bind(
-        &conf.tcp.listen, sender.clone()
-    ).await.expect("unable to bind to tcp port");
-    receiver::start(server).await
-}
-
-async fn start_udp(conf: config::Schema, sender: Sender<parser::Metric>){
-    if !conf.udp.enabled { return; }
-    let server: receiver::Udp = receiver::Receiver::bind(
-        &conf.udp.listen, sender.clone()
-    ).await.expect("unable to bind to tcp port");
-    receiver::start(server).await
-}
-
-//async fn start_prometheus(conf: config::Schema, sender: Sender<String>){
-    //if !conf.prometheus.enabled { return; }
-    //let server: receiver::Prometheus = receiver::Receiver::bind(
-        //&conf.prometheus.listen, sender.clone()
-    //).await.expect("unable to bind to Prometheus http on port");
-    //receiver::start(server).await
-//}

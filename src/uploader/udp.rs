@@ -6,12 +6,14 @@ use tokio::{
     net::UdpSocket,
     sync::broadcast::Receiver,
 };
+use regex::Regex;
 use crate::parser::Metric;
 use super::graphite;
 
 pub async fn uploader(
     host: String,
     port: i64,
+    pattern: String,
     mut rx: Receiver<Metric>
 ) -> Result<(), Box<dyn Error>> {
     let remote_addr:SocketAddr = format!("{}:{}", host, port)
@@ -26,10 +28,13 @@ pub async fn uploader(
     }
     .parse()?;
 
+    let re = Regex::new(&pattern).unwrap();
     let mut socket = UdpSocket::bind(local_addr).await?;
     socket.connect(&remote_addr).await?;
     loop {
         let res = rx.recv().await.unwrap();
-        socket.send(&graphite::format(res).into_bytes()).await?;
+        if re.is_match(res.path()) {
+            socket.send(&graphite::format(res).into_bytes()).await?;
+        }
     }
 }

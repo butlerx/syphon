@@ -18,11 +18,16 @@ impl Default for Uploader {
     }
 }
 
+fn wildcard() -> String {
+    ".*".to_string()
+}
+
 #[derive(Clone, Deserialize, Debug, Serialize)]
 pub struct Tcp {
     pub enabled: bool,
     pub host: String,
     pub port: i64,
+    #[serde(default = "wildcard")]
     pub pattern: String,
 }
 
@@ -31,6 +36,7 @@ pub struct Grpc {
     pub enabled: bool,
     pub host: String,
     pub port: i64,
+    #[serde(default = "wildcard")]
     pub pattern: String,
 }
 
@@ -39,6 +45,7 @@ pub struct Udp {
     pub enabled: bool,
     pub host: String,
     pub port: i64,
+    #[serde(default = "wildcard")]
     pub pattern: String,
 }
 
@@ -46,5 +53,6 @@ pub struct Udp {
 pub struct File {
     pub enabled: bool,
     pub path: String,
+    #[serde(default = "wildcard")]
     pub pattern: String,
 }

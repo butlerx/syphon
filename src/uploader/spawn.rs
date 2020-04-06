@@ -15,6 +15,7 @@ pub async fn spawn(conf: config::Schema, sender: Sender<Metric>) {
                 udp::uploader(
                     uploader.host.clone(),
                     uploader.port.clone(),
+                    uploader.pattern.clone(),
                     tx.subscribe()
                 ).await.expect("failed to send to udp")
             }));
@@ -27,6 +28,7 @@ pub async fn spawn(conf: config::Schema, sender: Sender<Metric>) {
                 tcp::uploader(
                     uploader.host.clone(),
                     uploader.port.clone(),
+                    uploader.pattern.clone(),
                     tx.subscribe()
                 ).await.expect("failed to send to tcp")
             }));
@@ -39,6 +41,7 @@ pub async fn spawn(conf: config::Schema, sender: Sender<Metric>) {
                 //grpc::uploader(
                 //    uploader.host.clone(),
                 //    uploader.port.clone(),
+                //    uploader.pattern.clone(),
                 //    tx.subscribe()
                 //)
             }));
@@ -50,6 +53,7 @@ pub async fn spawn(conf: config::Schema, sender: Sender<Metric>) {
             tasks.push(tokio::spawn(async move {
                 file::uploader(
                     uploader.path.clone(),
+                    uploader.pattern.clone(),
                     tx.subscribe()
                 ).await.expect("failed to write to file")
             }));

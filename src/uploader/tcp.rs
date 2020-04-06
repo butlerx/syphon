@@ -7,19 +7,28 @@ use tokio::{
     net::TcpStream,
     sync::broadcast::Receiver,
 };
+use regex::Regex;
 use crate::parser::Metric;
 use super::graphite;
 
-pub async fn uploader(host: String, port: i64, mut rx: Receiver<Metric>) -> Result<(), Box<dyn Error>> {
+pub async fn uploader(
+    host: String,
+    port: i64,
+    pattern: String,
+    mut rx: Receiver<Metric>
+) -> Result<(), Box<dyn Error>> {
     let remote_addr:SocketAddr = format!("{}:{}", host, port)
         .to_socket_addrs()
         .unwrap()
         .next()
         .unwrap();
 
+    let re = Regex::new(&pattern).unwrap();
     let mut socket = TcpStream::connect(remote_addr).await?;
     loop {
         let res = rx.recv().await.unwrap() ;
-        socket.write_all(&graphite::format(res).into_bytes()).await?;
+        if re.is_match(res.path()) {
+            socket.write_all(&graphite::format(res).into_bytes()).await?;
+        }
     }
 }

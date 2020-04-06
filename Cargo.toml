@@ -1,7 +1,14 @@
 [package]
 name = "syphon"
-description = "Versatile metrics processor, proxy and forwarder"
-version = "1.0.0"
+description = """
+Versatile metrics processor, proxy and forwarder"
+syphon is designed to accept and route metrics traffic.
+Metrics can be received from socket, snooped from live traffic or read from file or grpc.
+Metrics can be exportered via file, grpc or udp/tcp
+"""
+version = "0.1.0"
+repository = "https://github.com/butlerx/syphon"
+license-file = "LICENSE"
 authors = ["butlerx <butlerx@notthe.cloud>"]
 edition = "2018"
 

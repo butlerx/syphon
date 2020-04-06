@@ -18,7 +18,8 @@ port = 2004
 [[uploader.file]]
 enabled = true
 path = "metrics_received.txt"
-## Supports  full regex from https://docs.rs/regex/1.3.6/regex/
+# RegEx pattern to use to Determine if metric should be sent
+# Supports  full regex from https://docs.rs/regex/1.3.6/regex/
 pattern="metric.path*"
 
 # Designed for use with carbon-clickhouse
@@ -35,6 +36,7 @@ path = "metrics.txt"
 [udp]
 enabled = true
 listen = "127.0.0.1:2003"
+# Setting mode to promiscuous sets the interface to promiscuously listen
 # Allows to see traffic on a port already in use
 # mode = "promiscuous"
 

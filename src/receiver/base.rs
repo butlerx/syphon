@@ -11,11 +11,11 @@ pub trait Receiver:Sized {
 }
 
 pub async fn start<T: Receiver>(mut receiver:T){
-    println!(
+    info!(
         "Reciever listening; addr={}",
         receiver.addr().expect("unable to get local_addr")
     );
     if let Err(e) = receiver.run().await {
-        println!("error running receiver; error={}", e);
+        error!("error running receiver; error={}", e);
     }
 }

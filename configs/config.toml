@@ -5,15 +5,6 @@ endpoint = "local"
 # Interval of storing internal metrics. Like CARBON_METRIC_INTERVAL
 interval = "1m0s"
 
-[logging]
-# "stderr", "stdout" can be used as file name
-file = "stderr"
-# Logging error level. Valid values: "debug", "info", "warn", "error"
-level = "debug"
-#level = "info"
-# Logging encoding format. Valid values: "mixes", "json", "console"
-encoding = "mixed"
-
 [[uploader.udp]]
 enabled = false
 host = "127.0.0.1"

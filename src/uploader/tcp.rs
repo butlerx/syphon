@@ -25,10 +25,22 @@ pub async fn uploader(
 
     let re = Regex::new(&pattern).unwrap();
     let mut socket = TcpStream::connect(remote_addr).await?;
+    info!(
+        "conected to remote endpoint; proto={} remote_addr={} pattern={}",
+        "tcp",
+        remote_addr,
+        pattern
+    );
     loop {
         let res = rx.recv().await.unwrap() ;
         if re.is_match(res.path()) {
             socket.write_all(&graphite::format(res).into_bytes()).await?;
+            debug!(
+                "message sent; proto={} remote_addr={} pattern={}",
+                "tcp",
+                remote_addr,
+                pattern
+            );
         }
     }
 }

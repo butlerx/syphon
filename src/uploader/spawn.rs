@@ -4,7 +4,7 @@ use tokio::{
     sync::broadcast::Sender,
 };
 use crate::{config, parser::Metric};
-use super::{udp, tcp, file};
+use super::{udp, tcp, file, grpc};
 
 pub async fn spawn(conf: config::Schema, sender: Sender<Metric>) {
     let mut tasks = Vec::new();
@@ -36,14 +36,14 @@ pub async fn spawn(conf: config::Schema, sender: Sender<Metric>) {
     }
     for uploader in conf.uploader.grpc {
         if uploader.enabled {
-            let _tx = sender.clone();
+            let tx = sender.clone();
             tasks.push(tokio::spawn(async move {
-                //grpc::uploader(
-                //    uploader.host.clone(),
-                //    uploader.port.clone(),
-                //    uploader.pattern.clone(),
-                //    tx.subscribe()
-                //)
+                grpc::uploader(
+                    uploader.host.clone(),
+                    uploader.port.clone(),
+                    uploader.pattern.clone(),
+                    tx.subscribe()
+                ).await.expect("failed to send to grpc")
             }));
         }
     }

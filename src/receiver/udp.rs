@@ -40,7 +40,13 @@ impl base::Receiver for Server {
                         .send(metric)
                         .expect("failed to write data to channel");
                 }
-                println!("Recieved {} bytes from {}", size, peer);
+                debug!(
+                    "Recieved message; proto={} bytes={} remote_addr={} local_addr={}",
+                    "udp",
+                    size,
+                    peer,
+                    self.addr().unwrap()
+                );
             }
 
             // If we're here then `to_send` is `None`, so we take a look for the

@@ -48,7 +48,13 @@ impl base::Receiver for Server {
                             .send(metric)
                             .expect("failed to write data to channel");
                     }
-                    println!("Recieved {} bytes from {}", size, peer);
+                    debug!(
+                        "Recieved message; proto={} bytes={} remote_addr={} local_addr={}",
+                        "tcp",
+                        size,
+                        peer,
+                        socket.local_addr().unwrap()
+                    );
                 }
             });
         }

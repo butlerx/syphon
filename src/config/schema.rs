@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 mod receiver;
 mod uploader;
@@ -10,8 +9,6 @@ static METRIC_ENDPOINT_LOCAL: &str = "local";
 pub struct Config {
     #[serde(default)]
     pub metric: Metric,
-    #[serde(default = "HashMap::new", serialize_with = "toml::ser::tables_last")]
-    pub logging: HashMap<String, String>,
     #[serde(default)]
     pub file: receiver::File,
     #[serde(default)]

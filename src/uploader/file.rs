@@ -22,12 +22,23 @@ pub async fn uploader(
         .write(true)
         .open(&file_path)
         .await?;
-    println!("Writing to file; file={}", file_path.display());
+    info!(
+        "conected to remote endpoint; proto={} remote_addr={} pattern={}",
+        "file",
+        file_path.display(),
+        pattern
+    );
     let re = Regex::new(&pattern).unwrap();
     loop {
         let res = rx.recv().await.unwrap() ;
         if re.is_match(res.path()) {
             file.write_all(&graphite::format(res).into_bytes()).await?;
+            debug!(
+                "message sent; proto={} remote_addr={} pattern={}",
+                "file",
+                file_path.display(),
+                pattern
+            );
         }
     }
 }

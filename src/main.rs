@@ -38,13 +38,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .unwrap_or("configs/config.toml")
             .to_string()
     )?;
-    let (send, recv): (Sender<parser::Metric>, Receiver<parser::Metric>) = channel(1024);
+    let (send, _recv): (Sender<parser::Metric>, Receiver<parser::Metric>) = channel(1024);
 
     let _ = tokio::join!(
         tokio::spawn(start_udp(conf.clone(), send.clone())),
         tokio::spawn(start_tcp(conf.clone(), send.clone())),
         //tokio::spawn(start_prometheus(conf.clone(), send.clone())),
-        tokio::spawn(uploader::spawn(conf.clone(), recv)),
+        tokio::spawn(uploader::spawn(conf.clone(), send.clone())),
     );
 
     Ok(())

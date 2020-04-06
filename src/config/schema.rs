@@ -20,6 +20,8 @@ pub struct Config {
     pub tcp: receiver::Tcp,
     #[serde(default)]
     pub prometheus: receiver::Prometheus,
+    #[serde(default)]
+    pub uploader: uploader::Uploader,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]

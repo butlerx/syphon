@@ -7,6 +7,16 @@ pub struct Uploader {
     pub tcp: Vec<Tcp>,
     pub udp: Vec<Udp>,
 }
+impl Default for Uploader {
+    fn default() -> Self {
+        Uploader {
+            file: Vec::new(),
+            grpc: Vec::new(),
+            tcp: Vec::new(),
+            udp: Vec::new(),
+        }
+    }
+}
 
 #[derive(Clone, Deserialize, Debug, Serialize)]
 pub struct Tcp {

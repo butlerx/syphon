@@ -9,8 +9,16 @@ use tokio::{
 use crate::parser::Metric;
 use super::graphite;
 
-async fn uploader(addr: &String, rx: Receiver<Metric>) -> Result<(), Box<dyn Error>> {
-    let remote_addr:SocketAddr = addr.to_socket_addrs().unwrap().next().unwrap();
+pub async fn uploader(
+    host: String,
+    port: i64,
+    mut rx: Receiver<Metric>
+) -> Result<(), Box<dyn Error>> {
+    let remote_addr:SocketAddr = format!("{}:{}", host, port)
+        .to_socket_addrs()
+        .unwrap()
+        .next()
+        .unwrap();
     let local_addr:SocketAddr = if remote_addr.is_ipv4() {
         "0.0.0.0:0"
     } else {
@@ -20,8 +28,8 @@ async fn uploader(addr: &String, rx: Receiver<Metric>) -> Result<(), Box<dyn Err
 
     let mut socket = UdpSocket::bind(local_addr).await?;
     socket.connect(&remote_addr).await?;
-    while let res = rx.recv().await.unwrap() {
+    loop {
+        let res = rx.recv().await.unwrap();
         socket.send(&graphite::format(res).into_bytes()).await?;
     }
-    Ok(())
 }

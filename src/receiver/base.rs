@@ -7,7 +7,7 @@ use crate::parser::Metric;
 pub trait Receiver:Sized {
     async fn bind(addr: &String, sender: Sender<Metric>) -> io::Result<Self>;
     async fn run(&mut self) -> Result<(), io::Error>;
-    fn addr(&self) -> io::Result<std::net::SocketAddr>;
+    fn addr(&self) -> io::Result<String>;
 }
 
 pub async fn start<T: Receiver>(mut receiver:T){

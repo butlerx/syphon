@@ -26,8 +26,8 @@ impl base::Receiver for Server {
         Ok(server)
     }
 
-    fn addr(&self) -> io::Result<std::net::SocketAddr> {
-        self.socket.local_addr()
+    fn addr(&self) -> io::Result<String> {
+        Ok(self.socket.local_addr().unwrap().to_string())
     }
 
     async fn run(&mut self) -> Result<(), io::Error> {

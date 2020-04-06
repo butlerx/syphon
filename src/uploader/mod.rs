@@ -1,3 +1,4 @@
+mod file;
 mod graphite;
 mod spawn;
 mod tcp;

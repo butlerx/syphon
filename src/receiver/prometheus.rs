@@ -1,70 +1,56 @@
-use async_trait::async_trait;
-use std::{
-    io,
-    future,
-    convert::Infallible,
-    net::ToSocketAddrs
-};
-use super::Receiver;
+use std::{io, convert::Infallible, net::ToSocketAddrs};
 use snap::raw::Decoder;
+use crate::parser::Metric;
 use tokio::{self, sync::broadcast::Sender};
 use hyper::{
     Body,
     Method,
     Request,
     Response,
-    Server as Hyper,
+    Server,
     StatusCode,
-    service,
-    server::conn::AddrIncoming
+    service::{make_service_fn, service_fn},
 };
 
-pub struct Server {
-    listener: Hyper<
-        AddrIncoming,
-        dyn service::MakeServiceRef<
-            dyn future::Future,
-            Request<Body>
-        >
-    >,
+pub async fn bind(addr: String, sender: Sender<Metric>) -> Result<(), io::Error> {
+    let mut address = addr.to_socket_addrs().unwrap();
+    let listener = Server::bind(&address.next().unwrap())
+        .serve(
+            make_service_fn(move |_| {
+                let sender = sender.clone();
+                async move {
+                    Ok::<_, Infallible>(
+                        service_fn(move |req| http_server(sender.clone(), req))
+                    )
+                }
+            })
+        );
+    info!(
+        "Reciever listening; proto={} addr={}",
+        "prometheus",
+        listener.local_addr()
+    );
+    if let Err(err) = listener.await {
+        error!("prometheus server error; err={}", err);
+    }
+    Ok(())
 }
 
-#[async_trait]
-impl Receiver for Server {
-    async fn bind(addr: &String, sender: Sender<String>) -> io::Result<Server> {
-        let address = &addr.to_socket_addrs().unwrap();
-        let make_service = service::make_service_fn(move |_| {
-            let sender = sender.clone();
-            async move {
-                Ok::<_, Infallible>(service::service_fn(
-                    move |req| http_server(sender.clone(), req)
-                ))
-            }
-        });
-        let listener = Hyper::bind(&address.next().unwrap()).serve(make_service);
-        Ok(Server{ listener })
-    }
-
-    fn addr(&self) -> io::Result<std::net::SocketAddr> {
-        self.listener.local_addr()
-    }
-
-    async fn run(&mut self) -> Result<(), io::Error> {
-        self.listener.await;
-        Ok(())
-    }
-}
-
-async fn http_server(sender: Sender<String>, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
-    let decoder = Decoder::new();
+async fn http_server(_sender: Sender<Metric>, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+    let _decoder = Decoder::new();
     match req.method() {
-        &Method::GET => Ok(Response::new(Body::from("Syphon Prometheus Remote Write Interface"))),
+        &Method::GET => Ok(
+            Response::new(
+                Body::from("Syphon Prometheus Remote Write Interface
+see prometheus docs: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write")
+            )
+        ),
 
         &Method::POST => {
             let whole_body = hyper::body::to_bytes(req.into_body()).await?;
-            let message = decoder.decompress_vec(&whole_body);
 
-            Ok(Response::new(Body::from("Message Recieved")))
+            let reversed_body = whole_body.iter().rev().cloned().collect::<Vec<u8>>();
+            Ok(Response::new(Body::from(reversed_body)))
         }
         _ => {
             let mut not_found = Response::default();

@@ -1,6 +1,8 @@
 use super::Metric;
-use std::collections::HashMap;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{
+    collections::HashMap,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 pub fn parse(msg: String) -> Vec<Metric> {
     msg.split("\n")
@@ -40,7 +42,8 @@ fn parse_tags(path: &str) -> (&str, HashMap<String, String>) {
 }
 
 fn time_now() -> u64 {
-    let now = SystemTime::now();
-    let since_the_epoch = now.duration_since(UNIX_EPOCH).expect("Time went backwards");
-    since_the_epoch.as_secs()
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards")
+        .as_secs()
 }

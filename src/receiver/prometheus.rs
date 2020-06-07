@@ -1,7 +1,4 @@
-use std::{io, convert::Infallible, net::ToSocketAddrs};
-use snap::raw::Decoder;
-use crate::parser::Metric;
-use tokio::{self, sync::broadcast::Sender};
+use crate::parser::{prometheus, Metric};
 use hyper::{
     Body,
     Method,
@@ -11,6 +8,9 @@ use hyper::{
     StatusCode,
     service::{make_service_fn, service_fn},
 };
+use snap::raw::Decoder;
+use std::{io, convert::Infallible, net::ToSocketAddrs};
+use tokio::{self, sync::broadcast::Sender};
 
 pub async fn bind(addr: String, sender: Sender<Metric>) -> Result<(), io::Error> {
     let mut address = addr.to_socket_addrs().unwrap();
@@ -36,8 +36,8 @@ pub async fn bind(addr: String, sender: Sender<Metric>) -> Result<(), io::Error>
     Ok(())
 }
 
-async fn http_server(_sender: Sender<Metric>, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
-    let _decoder = Decoder::new();
+async fn http_server(sender: Sender<Metric>, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+    let mut decoder = Decoder::new();
     match req.method() {
         &Method::GET => Ok(
             Response::new(
@@ -47,10 +47,17 @@ see prometheus docs: https://prometheus.io/docs/prometheus/latest/configuration/
         ),
 
         &Method::POST => {
+            // Decode body, parse prometheus metric in to graphite, Send to channel
             let whole_body = hyper::body::to_bytes(req.into_body()).await?;
-
-            let reversed_body = whole_body.iter().rev().cloned().collect::<Vec<u8>>();
-            Ok(Response::new(Body::from(reversed_body)))
+            let decoded = decoder
+                .decompress_vec(&whole_body)
+                .expect("unable to decode prometheus");
+            for metric in prometheus::parse(decoded) {
+                sender
+                    .send(metric)
+                    .expect("failed to write data to channel");
+            }
+            Ok(Response::new(Body::from("Message Recieved")))
         }
         _ => {
             let mut not_found = Response::default();

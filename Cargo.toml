@@ -9,7 +9,6 @@ Metrics can be exportered via file, grpc or udp/tcp
 version = "0.1.0"
 repository = "https://github.com/butlerx/syphon"
 license = "Apache-2.0"
-license-file = "LICENSE"
 readme = "README.md"
 authors = ["butlerx <butlerx@notthe.cloud>"]
 edition = "2018"
@@ -17,7 +16,6 @@ build = "build.rs"
 include = ["src/**/*", "Cargo.toml", "configs/**/*.yaml", "proto/**/*.proto"]
 
 [dependencies]
-async-trait = "0.1.27"
 clap = "2.33.0"
 futures = "0.3.4"
 hyper = "0.13.4"

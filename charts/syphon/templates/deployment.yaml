@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "syphon.fullname" . }}
+  labels: {{- include "syphon.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels: {{- include "syphon.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "syphon.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | trim | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "syphon.serviceAccountName" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | trim | nindent 8 }}
+      {{- with .Values.podAnnotations }}
+      annotations: {{- toYaml . | trim | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext: {{- toYaml .Values.securityContext | trim | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: tcp
+              containerPort: 2003
+              protocol: TCP
+            - name: udp
+              containerPort: 2003
+              protocol: UDP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: tcp
+          readinessProbe:
+            httpGet:
+              path: /
+              port: tcp
+          resources: {{- toYaml .Values.resources | trim | nindent 12 }}
+          {{- with .Values.env -}}
+          env: {{- toYaml . | trim | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/syphon/config.toml
+              subPath: config.toml
+              readOnly: true
+        {{- with .Values.extraContainers }}
+          {{- toYaml . | trim | nindent 8 }}
+        {{- end }}
+      volumes: {{- include "syphon.volumes" . | nindent 8 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | trim | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- toYaml . | trim | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | trim | nindent 8 }}
+      {{- end }}

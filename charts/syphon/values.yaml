@@ -1,0 +1,54 @@
+---
+replicaCount: 1
+labels: {}
+podAnnotations: {}
+
+image:
+  repository: butlerx/syphon
+  pullPolicy: IfNotPresent
+
+env: []
+config: {}
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podSecurityContext: {}
+# fsGroup: 2000
+
+securityContext: {}
+# capabilities:
+#   drop:
+#   - ALL
+# readOnlyRootFilesystem: true
+# runAsNonRoot: true
+# runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 2003
+
+resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+## Enable an Specify container in extraContainers.
+## This is meant to allow adding sidecars such as carbon-c-relays
+extraContainers: []
+# - name: carbon
+#   image: openmetric/carbon-c-relay
+#   volumeMounts:
+#     - name: carbon-config-volume
+#       mountPath: /etc/carbon-c-relay/carbon-c-relay.conf
+#       subPath: carbon-c-relay.conf
+#       readOnly: true
+
+## Volumes that can be used in sidecar containers that will not be mounted to deployment pods
+extraContainerVolumes: []
+#  - name: volume-from-secret
+#    secret:
+#      secretName: secret-to-mount
+#  - name: empty-dir-volume
+#    emptyDir: {}

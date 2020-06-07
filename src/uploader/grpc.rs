@@ -2,12 +2,13 @@ use std::error::Error;
 use tokio::sync::broadcast::Receiver;
 use regex::Regex;
 use crate::parser;
-use carbon::carbon_client::CarbonClient;
 use carbon::{Payload, Metric, Point};
 
 pub mod carbon {
     tonic::include_proto!("carbon");
 }
+
+use carbon::carbon_client::CarbonClient;
 
 pub async fn uploader(
     host: String,

@@ -6,7 +6,7 @@ use tokio::{
 use crate::{config, parser::Metric};
 use super::{
     file,
-    prometheus,
+    //prometheus,
     tcp,
     udp,
 };
@@ -31,12 +31,11 @@ pub async fn spawn(conf: config::Schema, sender: Sender<Metric>) {
             sender.clone()
         )));
     }
-    if conf.prometheus.enabled {
-        tasks.push(tokio::spawn(prometheus::bind(
-            conf.prometheus.listen.clone(),
-            sender.clone()
-        )));
-    }
+    // if conf.prometheus.enabled {
+    //     tasks.push(tokio::spawn(prometheus::bind(
+    //         conf.prometheus.listen.clone(),
+    //         sender.clone()
+    //     )));
+    // }
     join_all(tasks).await;
 }
-

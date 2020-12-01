@@ -10,7 +10,7 @@ FROM scratch
 LABEL maintainer="Cian Butler<butlerx@notthe.cloud>"
 
 COPY --from=builder /usr/local/cargo/bin/syphon /usr/local/bin/syphon
-ADD config/config.toml /etc/syphon/config.toml
+ADD configs/config.toml /etc/syphon/config.toml
 
 EXPOSE 2003
 ENTRYPOINT ["/usr/local/bin/syphon"]

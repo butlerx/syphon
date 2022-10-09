@@ -25,13 +25,14 @@ pub async fn bind(addr: String, sender: Sender<Metric>) -> Result<(), io::Error>
                 }
             })
         );
-    info!(
-        "Reciever listening; proto={} addr={}",
-        "prometheus",
-        listener.local_addr()
+    log::info!(
+        "Reciever listening",{
+        proto: "prometheus",
+        addr: listener.local_addr()
+}
     );
     if let Err(err) = listener.await {
-        error!("prometheus server error; err={}", err);
+        log::error!("prometheus server error", {error: err});
     }
     Ok(())
 }
@@ -48,11 +49,8 @@ see prometheus docs: https://prometheus.io/docs/prometheus/latest/configuration/
 
         &Method::POST => {
             // Decode body, parse prometheus metric in to graphite, Send to channel
-            let whole_body = hyper::body::to_bytes(req.into_body()).await?;
-            let decoded = decoder
-                .decompress_vec(&whole_body)
-                .expect("unable to decode prometheus");
-            for metric in prometheus::parse(decoded) {
+            let body = hyper::body::to_bytes(req.into_body()).await?;
+            for metric in prometheus::parse(body) {
                 sender
                     .send(metric)
                     .expect("failed to write data to channel");

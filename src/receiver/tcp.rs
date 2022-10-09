@@ -1,27 +1,19 @@
 use crate::parser::{graphite, Metric};
+use kv_log_macro as log;
 use std::io;
-use tokio::{
-    self,
-    io::{AsyncReadExt},
-    net::TcpListener,
-    sync::broadcast::Sender,
-};
-
+use tokio::{self, io::AsyncReadExt, net::TcpListener, sync::broadcast::Sender};
 static TCP_BUFFER_SIZE: usize = 1024;
 
 pub async fn bind(addr: String, sender: Sender<Metric>) -> Result<(), io::Error> {
     let mut listener = TcpListener::bind(&addr).await?;
-    info!(
-        "Reciever listening; proto={} addr={}",
-        "tcp",
-        listener.local_addr().unwrap()
-    );
+    log::info!( "Reciever listening", { proto: "tcp", addr: addr });
 
     loop {
         let (mut socket, peer) = listener.accept().await?;
         let sender = sender.clone();
         tokio::spawn(async move {
             let mut buf = vec![0; TCP_BUFFER_SIZE];
+            let local_addr = socket.local_addr().unwrap().to_string();
             loop {
                 let size = socket
                     .read(&mut buf)
@@ -37,13 +29,13 @@ pub async fn bind(addr: String, sender: Sender<Metric>) -> Result<(), io::Error>
                         .send(metric)
                         .expect("failed to write data to channel");
                 }
-                debug!(
-                    "Recieved message; proto={} bytes={} remote_addr={} local_addr={}",
-                    "tcp",
-                    size,
-                    peer,
-                    socket.local_addr().unwrap()
-                );
+                log::debug!(
+                "Recieved message", {
+                proto: "tcp",
+                bytes: size,
+                remote_addr : peer.to_string(),
+                addr: local_addr,
+                });
             }
         });
     }

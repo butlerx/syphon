@@ -1,10 +1,7 @@
-use futures::future::join_all;
-use tokio::{
-    self,
-    sync::broadcast::Sender,
-};
+use super::{file, grpc, tcp, udp};
 use crate::{config, parser::Metric};
-use super::{udp, tcp, file, grpc};
+use futures::future::join_all;
+use tokio::{self, sync::broadcast::Sender};
 
 pub async fn spawn(conf: config::Schema, sender: Sender<Metric>) {
     let mut tasks = Vec::new();
@@ -14,10 +11,12 @@ pub async fn spawn(conf: config::Schema, sender: Sender<Metric>) {
             tasks.push(tokio::spawn(async move {
                 udp::uploader(
                     uploader.host.clone(),
-                    uploader.port.clone(),
+                    uploader.port,
                     uploader.pattern.clone(),
-                    tx.subscribe()
-                ).await.expect("failed to send to udp")
+                    tx.subscribe(),
+                )
+                .await
+                .expect("failed to send to udp")
             }));
         }
     }
@@ -27,10 +26,12 @@ pub async fn spawn(conf: config::Schema, sender: Sender<Metric>) {
             tasks.push(tokio::spawn(async move {
                 tcp::uploader(
                     uploader.host.clone(),
-                    uploader.port.clone(),
+                    uploader.port,
                     uploader.pattern.clone(),
-                    tx.subscribe()
-                ).await.expect("failed to send to tcp")
+                    tx.subscribe(),
+                )
+                .await
+                .expect("failed to send to tcp")
             }));
         }
     }
@@ -40,10 +41,12 @@ pub async fn spawn(conf: config::Schema, sender: Sender<Metric>) {
             tasks.push(tokio::spawn(async move {
                 grpc::uploader(
                     uploader.host.clone(),
-                    uploader.port.clone(),
+                    uploader.port,
                     uploader.pattern.clone(),
-                    tx.subscribe()
-                ).await.expect("failed to send to grpc")
+                    tx.subscribe(),
+                )
+                .await
+                .expect("failed to send to grpc")
             }));
         }
     }
@@ -54,8 +57,10 @@ pub async fn spawn(conf: config::Schema, sender: Sender<Metric>) {
                 file::uploader(
                     uploader.path.clone(),
                     uploader.pattern.clone(),
-                    tx.subscribe()
-                ).await.expect("failed to write to file")
+                    tx.subscribe(),
+                )
+                .await
+                .expect("failed to write to file")
             }));
         }
     }
